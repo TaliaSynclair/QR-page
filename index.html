@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You Scanned a QR Code</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #e5e5e5;
+      font-family: 'Courier New', monospace;
+    }
+    .glitch-text {
+      animation: glitch 1s infinite;
+    }
+    @keyframes glitch {
+      0% { text-shadow: 2px 2px #f0f, -2px -2px #0ff; }
+      50% { text-shadow: -2px -2px #f0f, 2px 2px #0ff; }
+      100% { text-shadow: 2px -2px #f0f, -2px 2px #0ff; }
+    }
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 10;
+      padding: 1rem;
+    }
+    main {
+      padding-top: 340px; /* Adjust based on header height */
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+  <!-- Fixed Header -->
+  <header class="text-center max-w-xl w-full mx-auto">
+    <div id="pointsDisplay" class="text-sm mb-2">Points: 0</div>
+    <h1 class="text-4xl md:text-5xl glitch-text mb-4">You Scanned a QR Code at Black Hat</h1>
+    <p class="mb-2 text-lg">Bold move. While you're here...</p>
+    <button onclick="resetPoints()" class="mt-2 bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-white text-sm">Reset Points</button>
+    <div id="rewardSection" class="hidden mt-4 text-center">
+      <p class="mb-2">You've earned a bonus. Claim your mystery reward:</p>
+      <button id="claimReward" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded text-white">Reveal Bonus Image</button>
+    </div>
+    <p class="mt-2 text-xs text-gray-500 italic">Make sure to visit again soon for more images and feature updates.</p>
+  </header>
+
+  <!-- Scrollable Gallery -->
+  <main class="flex-1 overflow-y-auto px-4">
+    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+  </main>
+
+  <script>
+    const imageList = [
+  'images/10efa97d-0946-4468-a637-fcc5c02812ab.png', 
+  'images/13781689-a8c6-4641-bf83-3de3c0572f0c.png', 
+  'images/155f260d-dfda-48ac-86f7-f714635a6f1a.png', 
+  'images/1e9b224c-2e37-456e-95b9-083f77b733f8.png', 
+  'images/1f89df90-f67a-4411-af2c-4298da0ec4f7.png', 
+  'images/379bb0b3-eb1e-47d2-91b8-6612d3d394d2.png', 
+  'images/44f73f94-663f-4d94-b9f7-766648a13637.png', 
+  'images/5205a8cf-e110-4c02-a67c-52f89134ca38.png', 
+  'images/553a868d-05fe-4cf6-972a-7b35a1bb11b0.png', 
+  'images/5cc21f94-5a8a-4c8b-ad43-512b369788c0.png', 
+  'images/613b568e-041a-4695-bd40-46007110042b.png', 
+  'images/6b299de3-80cc-4cde-8cce-496a39000bdd.png', 
+  'images/8e8e9bc6-4877-47c1-953f-f59141033312.png', 
+  'images/9eb4bd3b-9aeb-4bba-b580-85b04af2bd4f.png', 
+  'images/9ee4f732-251a-4789-aba8-44acec8c3992.png', 
+  'images/adc8a4fc-99c1-4630-be7f-644238f1c6be.png',
+  'images/Bonus-Image Jul 4, 2025, 04_20_29 PM.png', 
+  'images/d02ae473-2e17-424e-8f17-2d4d830f4fce.png', 
+  'images/df926c3f-8f5a-4848-af9e-acabd5b36cf5.png', 
+  'images/eb76fcbb-4cab-49bc-9ca4-f28c820dbe32.png', 
+  'images/ebeec049-7cfe-400a-9db0-fc435a418b4b.png', 
+  'images/ec9bc8a3-4ee6-4ded-b207-e78994d60646.png', 
+  'images/epicrealismXL_vxviiCrystalclear1.png', 
+  'images/epicrealismXL_vxviiCrystalclear2.png', 
+  'images/fc0476f7-f2c0-4a8d-b2a5-dfebf3d53918.png', 
+  'images/fcf7c7e0-c76c-4d9f-a6b0-fe3e2f152769.png', 
+  'images/Juggernaut1.png', 
+  'images/sample1.png', 
+  'images/sample2.png', 
+  'images/sample3.png', 
+    ];
+
+    const bonusImages = [
+  'images/Bonus Image Jul 4, 2025, 04_20_12 PM.png', 
+  'images/Bonus-1375a6e9-8981-48e9-bf6f-a35532d14778.png', 
+  'images/Bonus-1637bb5a-cc43-440b-a08b-d41cb47e55ce.png', 
+  'images/Bonus-b59ca1e4-611d-4279-9f7a-98e534787d6b.png', 
+  'images/Bonus-Image Jul 4, 2025, 04_20_29 PM.png',
+    ];
+
+    const gallery = document.getElementById('gallery');
+    const pointsDisplay = document.getElementById('pointsDisplay');
+    const rewardSection = document.getElementById('rewardSection');
+    const claimRewardBtn = document.getElementById('claimReward');
+
+    function getPoints() {
+      return parseInt(localStorage.getItem('qrPoints') || '0');
+    }
+
+    function setPoints(value) {
+      localStorage.setItem('qrPoints', value);
+      pointsDisplay.textContent = `Points: ${value}`;
+      const claimed = JSON.parse(localStorage.getItem('claimedBonusImages') || '[]').length;
+      if (value >= (claimed + 1) * 5) {
+        rewardSection.classList.remove('hidden');
+      } else {
+        rewardSection.classList.add('hidden');
+      }
+    }
+
+    function addPoint() {
+      const current = getPoints();
+      setPoints(current + 1);
+    }
+
+    function resetPoints() {
+      localStorage.clear();
+      location.reload();
+    }
+
+    claimRewardBtn.addEventListener('click', () => {
+      const claimedImages = JSON.parse(localStorage.getItem('claimedBonusImages') || '[]');
+      const unclaimed = bonusImages.filter(img => !claimedImages.includes(img));
+
+      if (unclaimed.length > 0) {
+        const random = unclaimed[Math.floor(Math.random() * unclaimed.length)];
+        claimedImages.push(random);
+        localStorage.setItem('claimedBonusImages', JSON.stringify(claimedImages));
+        setPoints(getPoints());
+
+        const popup = window.open('', '_blank', 'width=600,height=600');
+        popup.document.write(`
+          <html>
+          <head><title>Bonus Image</title></head>
+          <body style="background:#111;color:#eee;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+            <img src="${random}" alt="Bonus Image" style="max-height:90%;max-width:90%;border-radius:12px;box-shadow:0 0 20px #000;" />
+          </body>
+          </html>
+        `);
+      } else {
+        alert('You have claimed all available bonus images.');
+      }
+    });
+
+    setPoints(getPoints());
+
+    imageList.forEach(src => {
+      const container = document.createElement('div');
+      container.className = 'flex flex-col items-center';
+
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = 'AI Generated Art';
+      img.className = 'rounded shadow-lg max-h-[300px] mb-2';
+
+      const btns = document.createElement('div');
+      btns.className = 'flex justify-center gap-2 mb-4';
+      btns.innerHTML = `
+        <button class="bg-pink-600 hover:bg-pink-700 px-3 py-1 rounded text-white">👍</button>
+        <button class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-white">👎</button>
+        <button class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-white">🤯</button>
+      `;
+
+      const imageId = src.split('/').pop();
+      const votedKey = `voted_${imageId}`;
+
+      btns.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!localStorage.getItem(votedKey)) {
+            addPoint();
+            localStorage.setItem(votedKey, 'true');
+            btns.querySelectorAll('button').forEach(b => b.disabled = true);
+          } else {
+            alert("You've already voted on this image.");
+          }
+        });
+      });
+
+      container.appendChild(img);
+      container.appendChild(btns);
+      gallery.appendChild(container);
+    });
+  </script>
+</body>
+</html>
